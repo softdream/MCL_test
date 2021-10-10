@@ -105,6 +105,16 @@ public:
 		return sizeY;
 	}
 	
+	const int getMapCenterX() const
+	{
+		return mapCenterX;
+	}
+
+	const int getMapCenterY() const
+	{
+		return mapCenterY;
+	}
+	
 	void setScale( const float scale )
 	{
 		this->scale = scale;
@@ -205,6 +215,26 @@ public:
                 return map[ index ].getOccDist();
         }
 
+	const int getValidAreaMinX() const 
+	{
+		return min_x;
+	}
+	
+	const int getValidAreaMinY() const
+	{
+		return min_y;
+	}
+
+	const int getValidAreaMaxX() const
+	{
+		return max_x;
+	}
+
+	const int getValidAreaMaxY() const
+	{
+		return max_y;
+	}
+
 
 	void loadMapFromTheOccupiedGridMap()
 	{
@@ -215,6 +245,9 @@ public:
 	{
 		cv::Mat image = cv::imread( fileName, CV_8UC1 );
 		std::cout<<"open the bmp map ..."<<std::endl;
+
+		// get the valid area of the map
+		//findValidAreaOfTheMap( image );
 
 		std::vector<Eigen::Vector2d> freePoints;
 		pointVec occupiedPoints;
@@ -246,6 +279,9 @@ public:
 		std::cout<<"-------------------- Map -------------------"<<std::endl;
                 std::cout<<"occupied point number: "<<occupiedCount<<std::endl;
 		
+		// get the valid area of the map	
+		findValidAreaOfTheMap( occupiedPoints );
+
 		// build a kd tree
 		KDTree tree( occupiedPoints );
 	
@@ -366,6 +402,67 @@ private:
 		return minDist;
 	}
 	
+	void findValidAreaOfTheMap(const cv::Mat &image)
+	{
+		//int max_x = 0, max_y = 0, min_x = 1000, min_y = 1000;
+
+		for (int i = 0; i < image.cols; i++) {
+			for (int j = 0; j < image.rows; j++) {
+				if (image.at<uchar>(i, j) == 0) { // occupied points	
+					if (j > max_x) {
+						max_x = j;
+					}
+
+					if (i > max_y) {
+						max_y = i;
+					}
+
+					if (j < min_x) {
+						min_x = j;
+					}
+
+					if (i < min_y) {
+						min_y = i;
+					}
+				}
+			}
+		}
+		//cv::circle(image, cv::Point(min_x, min_y), 1, cv::Scalar(255));
+		//cv::circle(image, cv::Point(max_x, max_y), 1, cv::Scalar(255));
+		//cv::rectangle( image, cv::Point(min_x, min_y), cv::Point(max_x, max_y), cv::Scalar(255), 1 );
+
+		std::cout << "min x: " << min_x << ", min y: "<<min_y<< std::endl;
+		std::cout << "max x: " << max_x << ", max y: " << max_y << std::endl;
+	}
+
+        void findValidAreaOfTheMap(const pointVec &occupiedPoints)
+        {
+
+		for( auto it : occupiedPoints ){
+			int i = static_cast<int>( it[0] );
+			int j = static_cast<int>( it[1] );
+                        
+			if (j > max_x) {
+                        	max_x = j;
+                        }
+
+                        if (i > max_y) {
+                        	max_y = i;
+                        }
+
+                        if (j < min_x) {
+	                        min_x = j;
+	                }
+
+                        if (i < min_y) {
+                              	 min_y = i;
+                        }
+                }
+
+                std::cout << "min x: " << min_x << ", min y: "<<min_y<< std::endl;
+                std::cout << "max x: " << max_x << ", max y: " << max_y << std::endl;
+        }
+
 
 private:
 	bool allocateMap()
@@ -431,10 +528,16 @@ private:
 private:
 	int sizeX = 1001;
 	int sizeY = 1001;
+	
+	int mapCenterX = static_cast<int>( sizeX / 2 );
+	int mapCenterY = static_cast<int>( sizeY / 2 );
+
 	float scale = 0.1f;
 	float cellLength = 10.0f;
 
 	float maxOccDist = 50.0;
+
+	int max_x = 0, max_y = 0, min_x = sizeX, min_y = sizeY;
 
 	//std::vector<MapCell> map;
 	MapCell *map;
