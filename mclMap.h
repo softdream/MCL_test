@@ -269,6 +269,8 @@ public:
 					int index_y = static_cast<int>( it[1] ) - middle_kernel + y;
 				//	std::cout<<"( "<< index_x <<", "<<index_y<<" )"<<std::endl;	
 		
+					if( !isOutOfRange( index_x, index_y ) ) continue; // judge if the point is out of range
+	
 					if( getMapCellOccState( index_x, index_y ) == 0 && getMapCellOccDist( index_x, index_y ) == -1 ){ // avoid invalid caculation
 						point_t pt = { static_cast<double>( index_x ), static_cast<double>( index_y ) };
 						point_t ret = tree.nearest_point( pt );
