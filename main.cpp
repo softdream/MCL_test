@@ -11,5 +11,7 @@ int main()
 
 	map.showMap( );
 
+	map.showMapWithDistance();	
+
 	return 0;
 }

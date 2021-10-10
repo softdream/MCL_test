@@ -53,7 +53,7 @@ public:
 	}
 
 private:
-	float occDist = -1.0f;
+	float occDist = -1;
 	int occState = 0;
 };
 
@@ -195,12 +195,12 @@ public:
 		return map[ index ].getOccState();
 	}
 
-	const float getMapCellOccDist( const int x, const int y )
+	const int getMapCellOccDist( const int x, const int y )
         {
                 return map[ cellIndex( x, y ) ].getOccDist();
         }
 
-        const float getMapCellOccDist( const int index )
+        const int getMapCellOccDist( const int index )
         {
                 return map[ index ].getOccDist();
         }
@@ -215,30 +215,26 @@ public:
 	{
 		cv::Mat image = cv::imread( fileName, CV_8UC1 );
 		std::cout<<"open the bmp map ..."<<std::endl;
+		//cv::imshow( "test", image );
+		//cv::waitKey(0);
 
-		std::vector<Eigen::Vector2d> freePoints;
-		pointVec occupiedPoints;
+		std::vector<Eigen::Vector2f> occupiedPoints;
 
 		int occupiedCount  = 0;
 		for (int i = 0; i < image.cols; i++) {
 			for (int j = 0; j < image.rows; j++) {
 				if( image.at<uchar>(i, j) == 0 ){ // occupied points
 					occupiedCount ++; 	
-					setMapCellOccState( i, j, 1 ); // set value as 1
-					//std::cout<<"occupied int: ( "<<i<<", "<<j<<" )"<<std::endl;
-					
+					setMapCellOccState( i, j, 1 );
+
 					// added to the the vector
-					//occupiedPoints.push_back( Eigen::Vector2f( static_cast<float>( i ), static_cast<float>( j ) ) );
-					point_t pt = { static_cast<double>(i), static_cast<double>(j) };	
-					occupiedPoints.push_back( pt );		
-					//std::cout<<"occupied double: ( "<< pt[0] <<", "<<pt[1]<<" )"<<std::endl;
+					occupiedPoints.push_back( Eigen::Vector2f( static_cast<float>( i ), static_cast<float>( j ) ) );
 				}	
 				else if( image.at<uchar>(i, j) == 255 ) { // free points
-					setMapCellOccState( i, j, -1 ); // set value as -1
-					freePoints.push_back( Eigen::Vector2d( static_cast<double>(i), static_cast<double>(j) ) );
+					setMapCellOccState( i, j, -1 );
 				}
-				else { // unknow points
-					setMapCellOccState( i, j, 0 ); // set value as 0
+				else { // unknow
+					setMapCellOccState( i, j, 0 );
 				}
 			}
 		}
@@ -246,39 +242,16 @@ public:
 		std::cout<<"-------------------- Map -------------------"<<std::endl;
                 std::cout<<"occupied point number: "<<occupiedCount<<std::endl;
 		
-		// build a kd tree
-		KDTree tree( occupiedPoints );
-	
-		for( auto it : freePoints ){ // for free points
-			point_t pt = { it(0), it(1) };
-			point_t ret = tree.nearest_point( pt );
-			
-			//std::cout<<"free point: "<<cacuDist( pt, ret )<<std::endl;
-			setMapCellOccDist( static_cast<int>( it(0) ), static_cast<int>( it(1) ), cacuDist( pt, ret ) );
-		}	
-
-		for( auto it : occupiedPoints ){ 
-			setMapCellOccDist( static_cast<int>( it[0] ), static_cast<int>( it[1] ), 0.0f );
-			
-			//std::cout<<"occupied : ( "<< it[0] <<", "<<it[1]<<" )"<<std::endl;
-			for( int x = 0; x < kernelSize; x ++ ){ // for unknow points
-				for( int y = 0; y < kernelSize; y ++ ) {
-					int middle_kernel = ::floor( kernelSize / 2 );
-					
-					int index_x = static_cast<int>( it[0] ) - middle_kernel + x;
-					int index_y = static_cast<int>( it[1] ) - middle_kernel + y;
-				//	std::cout<<"( "<< index_x <<", "<<index_y<<" )"<<std::endl;	
-		
-					if( getMapCellOccState( index_x, index_y ) == 0 && getMapCellOccDist( index_x, index_y ) == -1 ){ // avoid invalid caculation
-						point_t pt = { static_cast<double>( index_x ), static_cast<double>( index_y ) };
-						point_t ret = tree.nearest_point( pt );
-						
-						//std::cout<<"( "<< pt[0] <<", "<<pt[1]<<" ) & ( "<<ret[0]<<", "<<ret[1]<<" ) : " <<cacuDist( pt, ret )<<std::endl;
-						setMapCellOccDist( index_x, index_y, cacuDist( pt, ret ) );
-					}
+		// find the nerest distance 
+		for (int i = 0; i < image.cols; i++) {
+                        for (int j = 0; j < image.rows; j++) {
+				if( image.at<uchar>(i, j) == 0 ){ // occupied points
+					setMapCellOccDist( i, j, 0.0f );
+				}	
+				else if( image.at<uchar>(i, j) == 255 ) {
+					setMapCellOccDist( i, j, nerestDistance( i, j, occupiedPoints ) );
 				}
 			}
-			//std::cout<<"---------------------------------------------"<<std::endl;	
 		}
 	}
 
@@ -295,7 +268,7 @@ public:
 	
 					image.at<uchar>(i, j ) = 0;
 				}		
-				else if( getMapCellOccState( i, j ) == -1 ){ // free
+				else if( getMapCellOccState( i, j ) == -1 ){
 					image.at<uchar>(i, j ) = 255;
 				}
 			}
@@ -309,44 +282,7 @@ public:
 		cv::waitKey(0);
 	}
 
-	void showMapWithDistance()
-	{
-		cv::Mat image = cv::Mat(sizeX, sizeY, CV_8UC1, cv::Scalar::all(255));
-	
-		for (int i = 0; i < image.cols; i++) {
-                        for (int j = 0; j < image.rows; j++) {
-                                if( getMapCellOccState( i, j ) == 1 ) { // occupied
-
-                                        image.at<uchar>(i, j ) = 0;      // black
-                                }
-				else if( getMapCellOccState( i, j ) == 0 ){ // unknow points
-					image.at<uchar>(i, j) = 255;	 // white
-				}
-				else if( getMapCellOccState( i, j ) == -1 ){ // free points
-					float valueF = 20.0f * getMapCellOccDist( i, j );
-					if( valueF > 255.0f ) valueF = 255.0f;
-					image.at<uchar>(i, j) = static_cast<uchar>( valueF );
-				}
-
-				if( getMapCellOccDist(i, j ) > 0.0f && getMapCellOccState( i, j ) != -1 ){ // some unknow points
-					float valueF = 40.0f * getMapCellOccDist( i, j );
-                                        if( valueF > 255.0f ) valueF = 255.0f;
-                                        image.at<uchar>(i, j) = static_cast<uchar>( valueF );
-				}
-                        }
-                }
-
-		cv::imshow( "map distance", image );
-	
-		cv::waitKey(0);
-	}
-
 private:
-	const float cacuDist( const point_t &a, const point_t &b )
-	{
-		return static_cast<float>( ::sqrt( ( ( b[1] - a[1] ) * ( b[1] - a[1] ) ) + ( ( b[0] - a[0] ) * ( b[0] - a[0] ) )  ) );
-	}
-
 	const float nerestDistance( const int x, const int y, const std::vector<Eigen::Vector2f> &occupiedPoints )	
 	{
 		float minDist = 1000000.0f;
@@ -436,8 +372,6 @@ private:
 
 	//std::vector<MapCell> map;
 	MapCell *map;
-
-	int kernelSize = 9;
 };
 
 }
