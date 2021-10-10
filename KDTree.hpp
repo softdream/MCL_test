@@ -1,15 +1,7 @@
 #pragma once
 
-/*
- * file: KDTree.hpp
- * author: J. Frederico Carvalho
- *
- * This is an adaptation of the KD-tree implementation in rosetta code
- *  https://rosettacode.org/wiki/K-d_tree
- * It is a reimplementation of the C code using C++.
- * It also includes a few more queries than the original
- *
- */
+#ifndef __KDTREE_H_
+#define __KDTREE_H_
 
 #include <algorithm>
 #include <functional>
@@ -128,3 +120,6 @@ class KDTree {
         const point_t &pt,          //
         const double &rad);
 };
+
+
+#endif
