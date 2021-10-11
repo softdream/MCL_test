@@ -2,7 +2,7 @@
 #define __MCL_H_
 
 #include "mclMap.h"
-
+#include <random>
 
 namespace mcl{
 
@@ -47,7 +47,7 @@ public:
 		this->pose = Eigen::Vector3f( x, y, theta );
 	}
 
-	const Eigen::Vector3& getPose(  ) const 
+	const Eigen::Vector3f& getPose(  ) const 
 	{
 		return pose;
 	}
@@ -79,13 +79,13 @@ public:
 
 private:
 	// state variable
-	Eigen::Vector3f pose( 0.0f, 0.0f, 0.0f );
+	Eigen::Vector3f pose = Eigen::Vector3f::Zero();
 		
 	// weight 	
 	float weight = 0;
 };
 
-template<int ParticleNum>
+template<int ParticleNum = 1000>
 class MCL
 {
 
@@ -102,7 +102,7 @@ public:
 
 	void initMclMapFromBMP( const std::string fileName )
 	{
-		map.loadMapFromBMP();
+		map.loadMapFromBMP( fileName );
 
 		map.showMapWithDistance();
 	}
@@ -122,7 +122,7 @@ public:
 			pose(1) = y_pose( gen );
 			pose(2) = theta_pos( gen );
 
-			if( map.setMapCellOccState( static_cast<int>( pose(0) ), static_cast<int>( pose(1) ) ) != -1 ){
+			if( map.getMapCellOccState( static_cast<int>( pose(0) ), static_cast<int>( pose(1) ) ) != -1 ){
 				continue;
 			}
 			
@@ -165,6 +165,11 @@ public:
 		}
 
 		cv::imshow( "map", image );
+	}
+	
+	void sampleMotionModelOdometry()
+	{
+
 	}
 	
 private:

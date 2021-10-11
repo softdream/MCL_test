@@ -11,6 +11,8 @@
 
 #include "KDTree.hpp"
 
+#define MAX_DISTANCE 50.0f
+
 namespace mcl{
 
 class MapCell
@@ -53,7 +55,7 @@ public:
 	}
 
 private:
-	float occDist = -1.0f;
+	float occDist = MAX_DISTANCE;
 	int occState = 0;
 };
 
@@ -307,7 +309,8 @@ public:
 		
 					if( !isOutOfRange( index_x, index_y ) ) continue; // judge if the point is out of range
 	
-					if( getMapCellOccState( index_x, index_y ) == 0 && getMapCellOccDist( index_x, index_y ) == -1 ){ // avoid invalid caculation
+					//if( getMapCellOccState( index_x, index_y ) == 0 && getMapCellOccDist( index_x, index_y ) == -1 ){ // avoid invalid caculation
+					if( getMapCellOccState( index_x, index_y ) == 0 ){
 						point_t pt = { static_cast<double>( index_x ), static_cast<double>( index_y ) };
 						point_t ret = tree.nearest_point( pt );
 						
