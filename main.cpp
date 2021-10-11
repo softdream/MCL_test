@@ -17,7 +17,10 @@ int main()
 	mcl::MCL<1000> mcl;
 	mcl.initMclMapFromBMP( "./test.bmp" );
 
+	mcl.initializeParticles();
+
 	mcl.showMap();
+	cv::waitKey(0);
 
 	return 0;
 }

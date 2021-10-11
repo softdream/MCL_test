@@ -149,7 +149,7 @@ public:
 
 	const int cellIndex( const int x, const int y )
 	{
-		return x + y * sizeY;
+		return x + y * sizeX;
 	}
 
 	bool isOutOfRange( const int x, const int y )	
