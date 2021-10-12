@@ -274,8 +274,37 @@ public:
 	}
 
 	// ------------------ Monte Carlo Localization ------------------ //
-	void monteCarloLocalization()
+	void monteCarloLocalization( const mcl::sensor::MclLaser &scanPoints, const Eigen::Vector3f &poseInMapNew, const Eigen::Vector3f &poseInMapOld )
 	{
+		float totalWeight  = 0.0f;
+
+		// for each particle
+		for( int i = 0; i < ParticleNum; i ++ ){
+			// 1. draw from the motion model
+			Eigen::Vector3f samplingPose = sampleMotionModelOdometry( particles[i].getPose(), poseInMapNew, poseInMapOld );
+			particles[i].setPose( samplingPose );
+
+			// 2. caculate the particles' weight according to measurement model
+			float weight = likelihoodFieldRangeFinderModel( scanPoints, samplingPose );
+			particles[i].setWeight( weight );
+			
+			// 3. caculate the total weight 
+			totalWeight += weight;
+		
+		}
+
+		// 4. normalize the weight of each particle
+		for( int i = 0; i < ParticleNum; i ++ ){
+			float normalWeight = particles[i].getWeight() / totalWeight;
+			particles[i].setWeight( normalWeight );
+		}
+		
+		// 5. resampling 
+		lowVarianceSample();
+
+		// 6. TODO ... caculate the real robot pose in world frame
+		
+		// 7. visualize the results by opencv
 		
 	}
 
